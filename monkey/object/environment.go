@@ -1,5 +1,7 @@
 package object
 
+import "sort"
+
 func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env := NewEnvironment()
 	env.outer = outer
@@ -27,4 +29,13 @@ func (e *Environment) Get(name string) (Object, bool) {
 func (e *Environment) Set(name string, val Object) Object {
 	e.store[name] = val
 	return val
+}
+
+func (e *Environment) Keys() []string {
+	keys := make([]string, 0, len(e.store))
+	for key := range e.store {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
