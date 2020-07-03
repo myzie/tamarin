@@ -1,8 +1,14 @@
 package evaluator
 
 import (
+	"context"
 	"fmt"
+	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+
+	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/myzie/tamarin/monkey/object"
 )
 
@@ -113,6 +119,53 @@ var builtins = map[string]*object.Builtin{
 			newElements[length] = args[1]
 
 			return &object.Array{Elements: newElements}
+		},
+	},
+	"ident": &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+
+			cfg, err := external.LoadDefaultAWSConfig()
+			if err != nil {
+				panic("unable to load SDK config, " + err.Error())
+			}
+			cfg.Region = "us-east-1"
+			svc := sts.New(cfg)
+
+			input := &sts.GetCallerIdentityInput{}
+			request := svc.GetCallerIdentityRequest(input)
+			response, err := request.Send(context.Background())
+			if err != nil {
+				return newError("AWS error: %s", err)
+			}
+			userID := *response.UserId
+
+			return &object.String{Value: userID}
+		},
+	},
+	"buckets": &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+
+			cfg, err := external.LoadDefaultAWSConfig()
+			if err != nil {
+				panic("unable to load SDK config, " + err.Error())
+			}
+			cfg.Region = "us-east-1"
+			svc := s3.New(cfg)
+
+			input := &s3.ListBucketsInput{}
+			request := svc.ListBucketsRequest(input)
+			response, err := request.Send(context.Background())
+			if err != nil {
+				return newError("AWS error: %s", err)
+			}
+
+			var buckets []string
+			for _, bucket := range response.Buckets {
+				buckets = append(buckets, *bucket.Name)
+			}
+			outputStr := strings.Join(buckets, ", ")
+
+			return &object.String{Value: outputStr}
 		},
 	},
 }
