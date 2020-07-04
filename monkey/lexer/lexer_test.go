@@ -148,6 +148,8 @@ func TestNextTokenExtended(t *testing.T) {
 22
 22.2
 let number = 22.2;
+// this is a comment
+99
 `
 
 	tests := []struct {
@@ -164,11 +166,14 @@ let number = 22.2;
 		{token.IDENT, "number"},
 		{token.ASSIGN, "="},
 		{token.FLOAT, "22.2"},
+		{token.SEMICOLON, ";"},
+		{token.INT, "99"},
 	}
 
 	l := New(input)
 
 	for i, tt := range tests {
+
 		tok := l.NextToken()
 
 		if tok.Type != tt.expectedType {

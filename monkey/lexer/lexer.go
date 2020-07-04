@@ -9,7 +9,6 @@ import (
 )
 
 type Lexer struct {
-	input        string
 	inputRunes   []rune
 	position     int  // current position in input (points to current rune)
 	readPosition int  // current reading position in input (after current rune)
@@ -18,7 +17,6 @@ type Lexer struct {
 
 func New(input string) *Lexer {
 	l := &Lexer{
-		input:      input,
 		inputRunes: []rune(input),
 	}
 	l.readChar()
@@ -54,6 +52,10 @@ func (l *Lexer) NextToken() token.Token {
 			tok = newToken(token.BANG, l.ch)
 		}
 	case '/':
+		if l.peekChar() == '/' {
+			l.readComment()
+			return l.NextToken()
+		}
 		tok = newToken(token.SLASH, l.ch)
 	case '*':
 		tok = newToken(token.ASTERISK, l.ch)
@@ -82,6 +84,8 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.LBRACKET, l.ch)
 	case ']':
 		tok = newToken(token.RBRACKET, l.ch)
+	case '.':
+		tok = newToken(token.PERIOD, l.ch)
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
@@ -112,6 +116,14 @@ func (l *Lexer) skipWhitespace() {
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
 		l.readChar()
 	}
+}
+
+func (l *Lexer) readComment() string {
+	position := l.position
+	for l.ch != '\n' && l.ch != 0 {
+		l.readChar()
+	}
+	return string(l.inputRunes[position:l.position])
 }
 
 func (l *Lexer) readChar() {
