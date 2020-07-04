@@ -1,16 +1,25 @@
 package lexer
 
-import "github.com/myzie/tamarin/monkey/token"
+import (
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/myzie/tamarin/monkey/token"
+)
 
 type Lexer struct {
 	input        string
-	position     int  // current position in input (points to current char)
-	readPosition int  // current reading position in input (after current char)
-	ch           byte // current char under examination
+	inputRunes   []rune
+	position     int  // current position in input (points to current rune)
+	readPosition int  // current reading position in input (after current rune)
+	ch           rune // current rune under examination
 }
 
 func New(input string) *Lexer {
-	l := &Lexer{input: input}
+	l := &Lexer{
+		input:      input,
+		inputRunes: []rune(input),
+	}
 	l.readChar()
 	return l
 }
@@ -100,21 +109,20 @@ func (l *Lexer) skipWhitespace() {
 }
 
 func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0
+	if l.readPosition >= len(l.inputRunes) {
+		l.ch = rune(0)
 	} else {
-		l.ch = l.input[l.readPosition]
+		l.ch = l.inputRunes[l.readPosition]
 	}
 	l.position = l.readPosition
-	l.readPosition += 1
+	l.readPosition++
 }
 
-func (l *Lexer) peekChar() byte {
-	if l.readPosition >= len(l.input) {
-		return 0
-	} else {
-		return l.input[l.readPosition]
+func (l *Lexer) peekChar() rune {
+	if l.readPosition >= len(l.inputRunes) {
+		return rune(0)
 	}
+	return l.inputRunes[l.readPosition]
 }
 
 func (l *Lexer) readIdentifier() string {
@@ -122,7 +130,7 @@ func (l *Lexer) readIdentifier() string {
 	for isLetter(l.ch) {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return string(l.inputRunes[position:l.position])
 }
 
 func (l *Lexer) readNumber() string {
@@ -130,7 +138,7 @@ func (l *Lexer) readNumber() string {
 	for isDigit(l.ch) {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return string(l.inputRunes[position:l.position])
 }
 
 func (l *Lexer) readString() string {
@@ -141,17 +149,24 @@ func (l *Lexer) readString() string {
 			break
 		}
 	}
-	return l.input[position:l.position]
+	return string(l.inputRunes[position:l.position])
 }
 
-func isLetter(ch byte) bool {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+func isLetter(ch rune) bool {
+	return ('a' <= ch && ch <= 'z' ||
+		'A' <= ch && ch <= 'Z' ||
+		ch == '_' ||
+		ch >= utf8.RuneSelf && unicode.IsLetter(ch))
 }
 
-func isDigit(ch byte) bool {
-	return '0' <= ch && ch <= '9'
+func isDigit(ch rune) bool {
+	return rune('0') <= ch && ch <= rune('9')
 }
 
-func newToken(tokenType token.TokenType, ch byte) token.Token {
+func isWhitespace(ch rune) bool {
+	return ch == rune(' ') || ch == rune('\t') || ch == rune('\n') || ch == rune('\r')
+}
+
+func newToken(tokenType token.Type, ch rune) token.Token {
 	return token.Token{Type: tokenType, Literal: string(ch)}
 }

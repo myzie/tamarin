@@ -33,7 +33,7 @@ if (5 < 10) {
 `
 
 	tests := []struct {
-		expectedType    token.TokenType
+		expectedType    token.Type
 		expectedLiteral string
 	}{
 		{token.LET, "let"},
@@ -123,6 +123,37 @@ if (5 < 10) {
 		{token.STRING, "bar"},
 		{token.RBRACE, "}"},
 		{token.EOF, ""},
+	}
+
+	l := New(input)
+
+	for i, tt := range tests {
+		tok := l.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextTokenExtended(t *testing.T) {
+
+	input := `let 你好 = "hello"`
+
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.LET, "let"},
+		{token.IDENT, "你好"},
+		{token.ASSIGN, "="},
+		{token.STRING, "hello"},
 	}
 
 	l := New(input)
