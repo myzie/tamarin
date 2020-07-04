@@ -58,3 +58,22 @@ func TestIntegerHashKey(t *testing.T) {
 		t.Errorf("integers with twoerent content have same hash keys")
 	}
 }
+
+func TestFloatHashKey(t *testing.T) {
+	one1 := &Float{Value: 1}
+	one2 := &Float{Value: 1}
+	two1 := &Float{Value: 2.1}
+	two2 := &Float{Value: 2.1}
+
+	if one1.HashKey() != one2.HashKey() {
+		t.Errorf("floats with same content have twoerent hash keys")
+	}
+
+	if two1.HashKey() != two2.HashKey() {
+		t.Errorf("floats with same content have twoerent hash keys")
+	}
+
+	if one1.HashKey() == two1.HashKey() {
+		t.Errorf("floats with twoerent content have same hash keys")
+	}
+}
