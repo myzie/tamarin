@@ -127,8 +127,13 @@ func Run(in io.Reader, out io.Writer) {
 		envRow := 1
 		screenWidth, _ := screen.Size()
 		for _, key := range env.Keys() {
+			var displayStr string
 			value, _ := env.Get(key)
-			displayStr := fmt.Sprintf("%s: %v", key, value.Inspect())
+			if value != nil {
+				displayStr = fmt.Sprintf("%s: %v", key, value.Inspect())
+			} else {
+				displayStr = fmt.Sprintf("%s: nil", key)
+			}
 			emitStr(screen, screenWidth/2, envRow, white, displayStr)
 			envRow++
 		}

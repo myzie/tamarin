@@ -144,7 +144,11 @@ if (5 < 10) {
 
 func TestNextTokenExtended(t *testing.T) {
 
-	input := `let 你好 = "hello"`
+	input := `let 你好 = "hello"
+22
+22.2
+let number = 22.2;
+`
 
 	tests := []struct {
 		expectedType    token.Type
@@ -154,6 +158,12 @@ func TestNextTokenExtended(t *testing.T) {
 		{token.IDENT, "你好"},
 		{token.ASSIGN, "="},
 		{token.STRING, "hello"},
+		{token.INT, "22"},
+		{token.FLOAT, "22.2"},
+		{token.LET, "let"},
+		{token.IDENT, "number"},
+		{token.ASSIGN, "="},
+		{token.FLOAT, "22.2"},
 	}
 
 	l := New(input)

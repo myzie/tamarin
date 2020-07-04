@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -90,8 +91,13 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Type = token.LookupIdent(tok.Literal)
 			return tok
 		} else if isDigit(l.ch) {
-			tok.Type = token.INT
-			tok.Literal = l.readNumber()
+			number := l.readNumber()
+			if strings.Contains(number, ".") {
+				tok.Type = token.FLOAT
+			} else {
+				tok.Type = token.INT
+			}
+			tok.Literal = number
 			return tok
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)
@@ -133,11 +139,22 @@ func (l *Lexer) readIdentifier() string {
 	return string(l.inputRunes[position:l.position])
 }
 
-func (l *Lexer) readNumber() string {
+func (l *Lexer) readInteger() string {
 	position := l.position
 	for isDigit(l.ch) {
 		l.readChar()
 	}
+	return string(l.inputRunes[position:l.position])
+}
+
+func (l *Lexer) readNumber() string {
+	position := l.position
+	integer := l.readInteger()
+	if l.ch != rune('.') {
+		return integer
+	}
+	l.readChar()
+	l.readInteger()
 	return string(l.inputRunes[position:l.position])
 }
 

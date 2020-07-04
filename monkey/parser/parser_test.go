@@ -200,6 +200,7 @@ func TestParsingInfixExpressions(t *testing.T) {
 		{"5 < 5;", 5, "<", 5},
 		{"5 == 5;", 5, "==", 5},
 		{"5 != 5;", 5, "!=", 5},
+		{"1.0 + 5", 1.0, "+", 5},
 		{"foobar + barfoo;", "foobar", "+", "barfoo"},
 		{"foobar - barfoo;", "foobar", "-", "barfoo"},
 		{"foobar * barfoo;", "foobar", "*", "barfoo"},
@@ -998,6 +999,8 @@ func testLiteralExpression(
 		return testIntegerLiteral(t, exp, int64(v))
 	case int64:
 		return testIntegerLiteral(t, exp, v)
+	case float64:
+		return testFloatLiteral(t, exp, v)
 	case string:
 		return testIdentifier(t, exp, v)
 	case bool:
@@ -1025,6 +1028,24 @@ func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
 		return false
 	}
 
+	return true
+}
+
+func testFloatLiteral(t *testing.T, il ast.Expression, value float64) bool {
+	flt, ok := il.(*ast.FloatLiteral)
+	if !ok {
+		t.Errorf("il not *ast.FloatLiteral. got=%T", il)
+		return false
+	}
+	if flt.Value != value {
+		t.Errorf("flt.Value not %f. got=%f", value, flt.Value)
+		return false
+	}
+	if flt.TokenLiteral() != fmt.Sprintf("%.1f", value) {
+		t.Errorf("flt.TokenLiteral not %f. got=%s", value,
+			flt.TokenLiteral())
+		return false
+	}
 	return true
 }
 
