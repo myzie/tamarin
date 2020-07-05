@@ -680,6 +680,52 @@ func TestCallExpressionParameterParsing(t *testing.T) {
 	}
 }
 
+func TestMethodCallExpressionParsing(t *testing.T) {
+	input := "obj.add(1, 2 * 3);"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
+			1, len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	exp, ok := stmt.Expression.(*ast.MethodCallExpression)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ast.MethodCallExpression. got=%T",
+			stmt.Expression)
+	}
+
+	if !testIdentifier(t, exp.Object, "obj") {
+		return
+	}
+	call, ok := exp.Call.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("Expected CallExpression. got=%T", exp.Call)
+	}
+
+	if !testIdentifier(t, call.Function, "add") {
+		t.Fatalf("Bad call identifier. got=%v", call.Function)
+	}
+
+	// if len(exp.) != 3 {
+	// 	t.Fatalf("wrong length of arguments. got=%d", len(exp.Arguments))
+	// }
+
+	// testLiteralExpression(t, exp.Arguments[0], 1)
+	// testInfixExpression(t, exp.Arguments[1], 2, "*", 3)
+	// testInfixExpression(t, exp.Arguments[2], 4, "+", 5)
+}
+
 func TestStringLiteralExpression(t *testing.T) {
 	input := `"hello world";`
 

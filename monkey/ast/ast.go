@@ -275,6 +275,23 @@ func (ce *CallExpression) String() string {
 	return out.String()
 }
 
+type MethodCallExpression struct {
+	Token  token.Token
+	Object Expression
+	Call   Expression
+}
+
+func (mc *MethodCallExpression) expressionNode()      {}
+func (mc *MethodCallExpression) TokenLiteral() string { return mc.Token.Literal }
+func (mc *MethodCallExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString(mc.Object.String())
+	out.WriteString(".")
+	out.WriteString(mc.Call.String())
+
+	return out.String()
+}
+
 type StringLiteral struct {
 	Token token.Token
 	Value string

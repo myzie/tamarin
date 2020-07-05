@@ -31,6 +31,7 @@ var precedences = map[token.Type]int{
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
+	token.PERIOD:   CALL,
 	token.LBRACKET: INDEX,
 }
 
@@ -82,6 +83,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.GT, p.parseInfixExpression)
 
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+	p.registerInfix(token.PERIOD, p.parseMethodCallExpression)
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 
 	// Read two tokens, so curToken and peekToken are both set
@@ -447,6 +449,21 @@ func (p *Parser) parseExpressionList(end token.Type) []ast.Expression {
 	}
 
 	return list
+}
+
+func (p *Parser) parseMethodCallExpression(object ast.Expression) ast.Expression {
+
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+	name := p.parseIdentifier()
+	p.nextToken()
+
+	return &ast.MethodCallExpression{
+		Token:  p.curToken,
+		Object: object,
+		Call:   p.parseCallExpression(name),
+	}
 }
 
 func (p *Parser) parseArrayLiteral() ast.Expression {
