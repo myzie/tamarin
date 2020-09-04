@@ -77,6 +77,23 @@ func eval(env *object.Environment, line string) (string, error) {
 	return out.String(), nil
 }
 
+func chunks(s string, n int) []string {
+	sub := ""
+	subs := []string{}
+	runes := bytes.Runes([]byte(s))
+	l := len(runes)
+	for i, r := range runes {
+		sub = sub + string(r)
+		if (i+1)%n == 0 {
+			subs = append(subs, sub)
+			sub = ""
+		} else if (i + 1) == l {
+			subs = append(subs, sub)
+		}
+	}
+	return subs
+}
+
 // Run the REPL
 func Run(in io.Reader, out io.Writer) {
 
@@ -92,22 +109,29 @@ func Run(in io.Reader, out io.Writer) {
 
 	var err error
 	var input, output string
+	history := []string{}
+	historyIndex := 0
 
 	running := true
 	for running {
 
-		emitStr(screen, 1, 1, green, "Tamarin Cloud Shell")
+		screenWidth, _ := screen.Size()
+
+		emitStr(screen, 1, 0, green, "Tamarin")
 
 		row := 2
 
+		emitStr(screen, 1, row, green, "➜")
+
 		// Show current input
 		for _, line := range strings.Split(input, "\n") {
-			emitStr(screen, 1, row, white, line)
+			emitStr(screen, 3, row, white, line)
 			row++
 		}
 
 		// Show cursor
-		screen.ShowCursor(len(input)+1, row-1)
+		screen.ShowCursor(2+len(input)+1, row-1)
+		row++
 
 		// Show current error
 		if err != nil {
@@ -119,13 +143,15 @@ func Run(in io.Reader, out io.Writer) {
 
 		// Show current output
 		for _, line := range strings.Split(output, "\n") {
-			emitStr(screen, 1, row, white, line)
-			row++
+			for _, chunk := range chunks(line, screenWidth) {
+				emitStr(screen, 1, row, white, chunk)
+				row++
+			}
 		}
 
 		// Show environment
 		envRow := 1
-		screenWidth, _ := screen.Size()
+
 		for _, key := range env.Keys() {
 			var displayStr string
 			value, _ := env.Get(key)
@@ -143,14 +169,45 @@ func Run(in io.Reader, out io.Writer) {
 		// Wait for the next input event
 		event := screen.PollEvent()
 		switch event := event.(type) {
+		case *tcell.EventMouse:
+			x, y := event.Position()
+			button := event.Buttons()
+			output = fmt.Sprintf("Mouse %d %d %v", x, y, button)
 		case *tcell.EventKey:
 			switch event.Key() {
+			case tcell.KeyUp:
+				if historyIndex < len(history) {
+					historyIndex++
+				}
+				if historyIndex == 0 {
+					input = ""
+				} else if len(history) > 0 {
+					input = history[len(history)-historyIndex]
+				}
+			case tcell.KeyDown:
+				if historyIndex > 0 {
+					historyIndex--
+				}
+				if historyIndex == 0 {
+					input = ""
+				} else if len(history) > 0 {
+					input = history[len(history)-historyIndex]
+				}
 			case tcell.KeyEscape, tcell.KeyCtrlC:
 				running = false
 				break
 			case tcell.KeyEnter:
-				output, err = eval(env, input)
+				input = strings.TrimSpace(input)
+				if input != "" {
+					history = append(history, input)
+					output, err = eval(env, input)
+				} else {
+					output = ""
+					err = nil
+				}
 				input = ""
+				historyIndex = 0
+				screen.Clear()
 			case tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyDelete:
 				lineLen := len(input)
 				if lineLen > 0 {

@@ -3,7 +3,6 @@ package evaluator
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
@@ -159,13 +158,12 @@ var builtins = map[string]*object.Builtin{
 				return newError("AWS error: %s", err)
 			}
 
-			var buckets []string
+			buckets := make([]object.Object, 0, len(response.Buckets))
 			for _, bucket := range response.Buckets {
-				buckets = append(buckets, *bucket.Name)
+				buckets = append(buckets, &object.String{Value: *bucket.Name})
 			}
-			outputStr := strings.Join(buckets, ", ")
 
-			return &object.String{Value: outputStr}
+			return &object.Array{Elements: buckets}
 		},
 	},
 	"type": &object.Builtin{
