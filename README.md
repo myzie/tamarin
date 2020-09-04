@@ -19,6 +19,7 @@ Cloud native scripting language and shell.
    are to be loaded. And other settings like the context, bucket name, etc.
  * Option for aliases set up via metadata definition
  * Immutability, case statements
+ * Dependency injection by name like pytest
 
 ## Load Common Definitions
 
